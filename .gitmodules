@@ -1,6 +1,8 @@
 [submodule "auth-service"]
 	path = auth-service
 	url = https://github.com/mk101/auth-service.git
+	branch = master
 [submodule "user-service"]
 	path = user-service
 	url = https://github.com/mk101/user-service.git
+	branch = master
