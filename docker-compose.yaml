@@ -50,7 +50,71 @@ services:
       MINIO_ROOT_USER: root
       MINIO_ROOT_PASSWORD: rootrootroot
     command: server --console-address ":9001" /data
+  
+  # ELK
+  elasticsearch:
+    image: elasticsearch:8.12.2
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data/
+      - ./elk-config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    environment:
+      - discovery.type=single-node
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=false
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
+    healthcheck:
+      test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 10
+  logstash:
+    image: logstash:8.12.2
+    container_name: logstash
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./elk-config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./elk-config/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - logstash_data:/usr/share/logstash/data
+      - ./logs:/app/logs
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+  kibana:
+    image: kibana:8.12.2
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    volumes:
+      - ./elk-config/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+      - kibana_data:/usr/share/kibana/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+  #  filebeat:
+  #    image: docker.elastic.co/beats/filebeat:8.12.2
+  #    container_name: filebeat
+  #    environment:
+  #      - setup.kibana.host=kibana:5601
+  #      - output.elasticsearch.hosts=["elasticsearch:9200"]
+  #    volumes:
+  #      - ./elk-config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+  #      - filebeat_data:/usr/share/filebeat/data:rw
+  #      - ./logs:/app/logs:ro
+  #    depends_on:
+  #      elasticsearch:
+  #        condition: service_healthy
+  #    command: filebeat -e -strict.perms=false
 
+  # Backend
   auth-service:
     build: auth-service/
     container_name: auth-service
@@ -71,6 +135,8 @@ services:
     depends_on:
       - database
       - redis
+    volumes:
+      - ./logs:/app/logs
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s
@@ -103,6 +169,8 @@ services:
         condition: service_started
       database:
         condition: service_started
+    volumes:
+      - ./logs:/app/logs
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s
@@ -113,3 +181,7 @@ volumes:
   database: {}
   redis: {}
   minio_storage: {}
+  elasticsearch_data: {}
+  logstash_data: {}
+  kibana_data: {}
+  filebeat_data: {}

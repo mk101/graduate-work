@@ -1,0 +1,9 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /app/logs/auth-service.log
+    index: auth-service
+
+output.logstash:
+  hosts: ["logstash:5044"]
