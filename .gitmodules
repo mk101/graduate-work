@@ -6,3 +6,7 @@
 	path = user-service
 	url = https://github.com/mk101/user-service.git
 	branch = master
+[submodule "map-service"]
+	path = map-service
+	url = https://github.com/mk101/map-service.git
+	branch = master
