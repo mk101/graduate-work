@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   database:
@@ -50,7 +50,7 @@ services:
       MINIO_ROOT_USER: root
       MINIO_ROOT_PASSWORD: rootrootroot
     command: server --console-address ":9001" /data
-  
+
   # ELK
   elasticsearch:
     image: elasticsearch:8.12.2
@@ -69,11 +69,13 @@ services:
       - xpack.monitoring.collection.enabled=false
       - cluster.name=elasticsearch
       - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
     healthcheck:
       test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
       interval: 30s
       timeout: 10s
       retries: 10
+    mem_limit: 4g
   logstash:
     image: logstash:8.12.2
     container_name: logstash
@@ -81,8 +83,11 @@ services:
       - "5044:5044"
       - "9600:9600"
     volumes:
-      - ./elk-config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./elk-config/logstash/postgresql.jar:/opt/drivers/postgresql.jar
+      - ./elk-config/logstash/logs.conf:/usr/share/logstash/pipeline/logs.conf
+      - ./elk-config/logstash/pg.conf:/usr/share/logstash/pipeline/pg.conf
       - ./elk-config/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./elk-config/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml
       - logstash_data:/usr/share/logstash/data
       - ./logs:/app/logs
     depends_on:
@@ -99,20 +104,6 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-  #  filebeat:
-  #    image: docker.elastic.co/beats/filebeat:8.12.2
-  #    container_name: filebeat
-  #    environment:
-  #      - setup.kibana.host=kibana:5601
-  #      - output.elasticsearch.hosts=["elasticsearch:9200"]
-  #    volumes:
-  #      - ./elk-config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-  #      - filebeat_data:/usr/share/filebeat/data:rw
-  #      - ./logs:/app/logs:ro
-  #    depends_on:
-  #      elasticsearch:
-  #        condition: service_healthy
-  #    command: filebeat -e -strict.perms=false
 
   # Backend
   auth-service:
