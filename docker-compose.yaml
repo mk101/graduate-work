@@ -37,6 +37,8 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
+      map-service:
+        condition: service_healthy
 
   minio:
     image: minio/minio
@@ -51,7 +53,7 @@ services:
       MINIO_ROOT_PASSWORD: rootrootroot
     command: server --console-address ":9001" /data
 
-  # ELK
+# ELK
   elasticsearch:
     image: elasticsearch:8.12.2
     container_name: elasticsearch
@@ -158,6 +160,37 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      database:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+  map-service:
+    build: map-service/
+    container_name: map-service
+    ports:
+      - "83:8080"
+      - "5008:5005"
+    environment:
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_PATH: auth
+      AUTH_SERVICE_PORT: 8080
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_DATABASE: mapping_service
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
       database:
         condition: service_started
     volumes:
