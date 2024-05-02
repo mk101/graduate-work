@@ -10,3 +10,6 @@
 	path = map-service
 	url = https://github.com/mk101/map-service.git
 	branch = master
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/mk101/frontend.git
