@@ -1,0 +1,14 @@
+{
+    "inputs": [
+        {
+            "inputURL": "http://auth-service:8080/v3/api-docs"
+        },
+        {
+            "inputURL": "http://user-service:8080/v3/api-docs"
+        },
+        {
+            "inputURL": "http://map-service:8080/v3/api-docs"
+        }
+    ],
+    "output": "./result.swagger.json"
+}

@@ -201,6 +201,20 @@ services:
       map-service:
         condition: service_healthy
 
+  swagger:
+    build: ./swagger
+    container_name: swagger
+    ports:
+      - "85:8080"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      map-service:
+        condition: service_healthy
+      frontend:
+        condition: service_started
 volumes:
   database: {}
   redis: {}
